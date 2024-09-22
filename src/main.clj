@@ -1,17 +1,13 @@
 (ns main (:require [io.pedestal.http :as http]
                    [io.pedestal.http.route :as route]
-                   [io.pedestal.test :as test]))
+                   [io.pedestal.test :as test]
+                   [clojure.data.json :as json]))
 
 
 
-(def novo-autor {
-  :name :novo-autor
-  :enter (fn [context]
-           context
-           )
-})
-
-;; configuracoes
+(defn parse-json-body [context]
+  (let [body (slurp (get-in context [:request :body]))] ;; Converte o corpo para string
+    (json/read-str body :key-fn keyword))) ;; Decodifica o JSON
 
 (defonce database (atom {}))
 
@@ -39,6 +35,24 @@
             )
    }
   )
+
+;;aqui pode ser um multimetodo
+(defn respond-with-json [context payload]
+    (http/respond-with context 200 {"Content-Type" "application/json"} payload)
+  )
+
+
+(def novo-autor {
+                 :name :novo-autor
+                 :enter (fn [context]
+                          (let [payload (parse-json-body context)]
+                            (respond-with-json context payload)
+                            )
+                          )
+
+                 })
+
+;; configuracoes
 
 ;eu quero descobrir pq o argumento de nome da rota não é um mapa
 (def routes
@@ -73,6 +87,8 @@
   (stop-server)
   (start-dev)
   )
+
+
 
 
 
