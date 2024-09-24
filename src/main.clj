@@ -1,12 +1,16 @@
 (ns main (:require [io.pedestal.http :as http]
                    [io.pedestal.http.route :as route]
                    [io.pedestal.test :as test]
-                   [clojure.data.json :as json]))
+                   [clojure.data.json :as json]
+                   [malli.core :as m]
+                   [malli.error :as me]
+                   ))
 
 
-
+;;##paraTreinar aqui eu posso usar o lance das specs, para definir bem a entrada. Brincar de pre e pos condicoes
 (defn parse-json-body [context]
   (let [body (slurp (get-in context [:request :body]))] ;; Converte o corpo para string
+    ;:key-fn é por onde passamos a funcao que transforma a propriedade que está como string para uma keyword a ser adicionada no mapa
     (json/read-str body :key-fn keyword))) ;; Decodifica o JSON
 
 (defonce database (atom {}))
@@ -38,15 +42,37 @@
 
 ;;aqui pode ser um multimetodo
 (defn respond-with-json [context payload]
-    (http/respond-with context 200 {"Content-Type" "application/json"} payload)
+    (http/respond-with context 200 (json/write-str payload))
   )
 
+(defn respond-validation-error-with-json [context errors]
+  (http/respond-with context 400 {"Content-Type" "application/json"} (json/write-str errors))
+  )
+
+(def schema-novo-autor
+  [:map
+   [:nome [:string {:min 1 :max 20 :error/message "Nome é obrigatório"}]]
+   [:email [:string {:min 1 :error/message "Email inválido"}]]
+   [:descricao  [:string {:min 1 :max 100 :error/message "Descricao obrigatoria"}]]
+   ])
 
 (def novo-autor {
                  :name :novo-autor
                  :enter (fn [context]
-                          (let [payload (parse-json-body context)]
-                            (respond-with-json context payload)
+                          (let [payload (parse-json-body context)
+                                ;aqui eu estou validando duas vezes?
+                                valid? (m/validate schema-novo-autor payload)
+                                errors (me/humanize (m/explain schema-novo-autor payload))
+                                ]
+                            (println payload)
+                            (println valid?)
+                            (println errors)
+                            (if valid?
+                              (respond-with-json context payload)
+
+                              (respond-validation-error-with-json context errors)
+
+                              )
                             )
                           )
 
