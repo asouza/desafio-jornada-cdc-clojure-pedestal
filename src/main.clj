@@ -51,6 +51,15 @@
   (assoc-in banco-dados [nome-tabela chave-primaria] dados)
   )
 
+(defn verifica-campo-banco-dados [banco-dados tabela campo valor-buscado]
+  ;precisa pegar todos os valores do mapa autores
+  ;dentro dos valores buscar se tem algum com email igual
+
+  (let [linhas (vals (get banco-dados tabela))]
+    (some #(= valor-buscado (get % campo)) linhas)
+    )
+  )
+
 (def schema-novo-autor
   [:map
    [:nome [:string {:min 1 :max 20 :error/message "Nome é obrigatório"}]]
@@ -64,6 +73,8 @@
   (str (gensym "i"))
   )
 
+;chatgpt me disse que eu poderia ter explodido aqui nas tres variáveis que eu criei.
+;Ao mesmo tempo disse que meu código está ok
 (defn converte-linha-autor-saida-lista [autor]
   {
     :nome (:nome autor)
@@ -82,14 +93,6 @@
    }
   )
 
-(defn verifica-campo-banco-dados [banco-dados tabela campo valor-buscado]
-  ;precisa pegar todos os valores do mapa autores
-  ;dentro dos valores buscar se tem algum com email igual
-
-  (let [linhas (vals (get banco-dados tabela))]
-    (some #(= valor-buscado (get % campo)) linhas)
-    )
-  )
 
 (def novo-autor {
                  :name :novo-autor
@@ -125,6 +128,50 @@
 
                  })
 
+(def schema-nova-categoria
+  [:map
+   [:nome [:string {:min 1 :max 20 :error/message "Nome é obrigatório"}]]
+   [:descricao  [:string {:min 1 :max 100 :error/message "Descricao obrigatoria"}]]
+   ])
+
+(defrecord Categoria [nome descricao instante-criacao])
+
+(def nova-categoria {
+                 :name :nova-categoria
+                 :enter (fn [context]
+                          (let [
+                                banco-dados (get-in context [:request :database])
+                                payload (parse-json-body context)
+                                ;aqui eu estou validando duas vezes?
+                                valid? (m/validate schema-nova-categoria payload)
+                                errors (me/humanize (m/explain schema-nova-categoria payload))
+                                ;;deve ter outro jeito de criar uma funcao para atrasar a execução de um código
+                                ja-existe-nome-cadastrado (fn [] (verifica-campo-banco-dados banco-dados :categorias :nome (:nome payload)))
+                                ]
+
+                            (cond
+                              (not valid?) (respond-validation-error-with-json context errors)
+
+                              (ja-existe-nome-cadastrado) (respond-validation-error-with-json context {:global-erros ["Já existe categoria com o nome passado"]})
+
+                              :else (let [{:keys [nome descricao]} payload
+                                          instance-criacao (LocalDateTime/now)
+                                          id (gera-chave-primaira)
+                                          categoria-para-salvar (->Categoria nome descricao instance-criacao)]
+
+                                      ;; curioso que o exemplo acha melhor acessar uma variável global do que acessar o atom via parametro
+                                      (swap! database insere-tabela :categorias id categoria-para-salvar)
+                                      (respond-with-json (assoc-in context [:request :database] @database) {:id id})
+
+                                      )
+                              )
+                            )
+                          )
+
+                 })
+
+
+
 
 
 ;; configuracoes
@@ -135,6 +182,7 @@
     #{
        ["/autores" :post [db-interceptor novo-autor]]
        ["/autores" :get [db-interceptor lista-autores]]
+       ["/categorias" :post [db-interceptor nova-categoria]]
       }
     )
   )
