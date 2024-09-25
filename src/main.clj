@@ -64,13 +64,21 @@
   (str (gensym "i"))
   )
 
+(defn converte-linha-autor-saida-lista [autor]
+  {
+    :nome (:nome autor)
+    :email (:email autor)
+    :descricao (:descricao autor)
+   }
+  )
 
 (def lista-autores
   {
     :name :lista-autores
     :enter (fn [context]
-             (respond-with-json context (get-in context [:request :database]))
-             )
+        (let [linhas-autores (vals (get-in context [:request :database :autores]))]
+           (respond-with-json context (map converte-linha-autor-saida-lista linhas-autores))
+          ))
    }
   )
 
