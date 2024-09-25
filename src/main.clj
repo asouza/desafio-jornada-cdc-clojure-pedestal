@@ -4,7 +4,9 @@
                    [clojure.data.json :as json]
                    [malli.core :as m]
                    [malli.error :as me]
-                   ))
+                   )
+  (:import [java.time LocalDateTime])
+  )
 
 
 ;;##paraTreinar aqui eu posso usar o lance das specs, para definir bem a entrada. Brincar de pre e pos condicoes
@@ -20,22 +22,12 @@
    :name :database-interceptor
    :enter (fn [context]
             (println "Entrando no db-interceptor")
+
             (update context :request assoc :database @database)
             )
    :leave (fn [context]
             (println "Saindo do db-interceptor")
-            ;ta recuperando um valor do mapa e desestruturando nas varíaveis. Aqui no caso é a operacao + args
-            (if-let [[op & args] (:tx-data context)]
-              (do
-                ;aqui atualiza o valor do atom aplicando a funcao op com os args passados
-                ;aqui é importante notar que a funcao de atualizacao do atom tem que ser pura.
-                (apply swap! database op args)
-                (assoc-in context [:request :database] @database)
-                )
-              ;; o db interceptor não estava retornando nada quando não tinha operacao. Se o interceptor
-              ;; nao retorna nada ele interrompe o fluxo.
-              context
-              )
+            context
             )
    }
   )
@@ -49,6 +41,16 @@
   (http/respond-with context 400 {"Content-Type" "application/json"} (json/write-str errors))
   )
 
+
+;; {:autores {:chave-primaria dados}}
+
+;; (get-in banco-dados [:autores :chave-primaria])
+
+;;(apply swap! database op args)
+(defn insere-tabela [banco-dados nome-tabela chave-primaria dados]
+  (assoc-in banco-dados [nome-tabela chave-primaria] dados)
+  )
+
 (def schema-novo-autor
   [:map
    [:nome [:string {:min 1 :max 20 :error/message "Nome é obrigatório"}]]
@@ -56,27 +58,66 @@
    [:descricao  [:string {:min 1 :max 100 :error/message "Descricao obrigatoria"}]]
    ])
 
+(defrecord Autor [nome email descricao instante-criacao])
+
+(defn gera-chave-primaira []
+  (str (gensym "i"))
+  )
+
+
+(def lista-autores
+  {
+    :name :lista-autores
+    :enter (fn [context]
+             (respond-with-json context (get-in context [:request :database]))
+             )
+   }
+  )
+
+(defn verifica-campo-banco-dados [banco-dados tabela campo valor-buscado]
+  ;precisa pegar todos os valores do mapa autores
+  ;dentro dos valores buscar se tem algum com email igual
+
+  (let [linhas (vals (get banco-dados tabela))]
+    (some #(= valor-buscado (get % campo)) linhas)
+    )
+  )
+
 (def novo-autor {
                  :name :novo-autor
                  :enter (fn [context]
-                          (let [payload (parse-json-body context)
+                          (let [
+                                banco-dados (get-in context [:request :database])
+                                payload (parse-json-body context)
                                 ;aqui eu estou validando duas vezes?
                                 valid? (m/validate schema-novo-autor payload)
                                 errors (me/humanize (m/explain schema-novo-autor payload))
+                                ;;deve ter outro jeito de criar uma funcao para atrasar a execução de um código
+                                ja-existe-email-cadastrado (fn [] (verifica-campo-banco-dados banco-dados :autores :email (:email payload)))
                                 ]
-                            (println payload)
-                            (println valid?)
-                            (println errors)
-                            (if valid?
-                              (respond-with-json context payload)
 
-                              (respond-validation-error-with-json context errors)
+                            (cond
+                              (not valid?) (respond-validation-error-with-json context errors)
 
+                              (ja-existe-email-cadastrado) (respond-validation-error-with-json context {:global-erros ["Já existe autor com email cadastrado"]})
+
+                              :else (let [{:keys [nome email descricao]} payload
+                                          instance-criacao (LocalDateTime/now)
+                                          id (gera-chave-primaira)
+                                          autor-para-salvar (->Autor nome email descricao instance-criacao)]
+
+                                      ;; curioso que o exemplo acha melhor acessar uma variável global do que acessar o atom via parametro
+                                      (swap! database insere-tabela :autores id autor-para-salvar)
+                                      (respond-with-json (assoc-in context [:request :database] @database) {:id id})
+
+                                      )
                               )
                             )
                           )
 
                  })
+
+
 
 ;; configuracoes
 
@@ -84,7 +125,8 @@
 (def routes
   (route/expand-routes
     #{
-      ["/autores" :post [db-interceptor novo-autor]]
+       ["/autores" :post [db-interceptor novo-autor]]
+       ["/autores" :get [db-interceptor lista-autores]]
       }
     )
   )
