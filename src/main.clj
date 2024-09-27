@@ -12,6 +12,7 @@
             [detalhe-livro]
             [novo-pais]
             [novo-estado]
+            [lista-autores]
             )
 
   (:import (java.time LocalDateTime)))
@@ -55,29 +56,6 @@
 (defn gera-chave-primaira []
   (str (gensym "i"))
   )
-
-;chatgpt me disse que eu poderia ter explodido aqui nas tres variáveis que eu criei.
-;Ao mesmo tempo disse que meu código está ok
-(defn converte-linha-autor-saida-lista [autor]
-  {
-    :nome (:nome autor)
-    :email (:email autor)
-    :descricao (:descricao autor)
-   }
-  )
-
-(def lista-autores
-  {
-    :name :lista-autores
-    :enter (fn [context]
-        (let [linhas-autores (vals (get-in context [:request :database :autores]))]
-           (utilitarios/respond-with-json context (map converte-linha-autor-saida-lista linhas-autores))
-          ))
-   }
-  )
-
-
-
 
 (def schema-nova-categoria
   [:map
@@ -200,7 +178,7 @@
   (route/expand-routes
     #{
        ["/autores" :post [db-interceptor novo-autor/handler]]
-       ["/autores" :get [db-interceptor lista-autores]]
+       ["/autores" :get [db-interceptor lista-autores/handler]]
        ["/categorias" :post [db-interceptor nova-categoria]]
        ["/livros" :post [db-interceptor novo-livro]]
        ["/livros" :get [db-interceptor lista-livros/handler]]
