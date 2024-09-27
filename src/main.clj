@@ -13,6 +13,7 @@
             [novo-pais]
             [novo-estado]
             [lista-autores]
+            [nova-categoria]
             )
 
   (:import (java.time LocalDateTime)))
@@ -56,52 +57,6 @@
 (defn gera-chave-primaira []
   (str (gensym "i"))
   )
-
-(def schema-nova-categoria
-  [:map
-   [:nome [:string {:min 1 :max 20 :error/message "Nome é obrigatório"}]]
-   [:descricao [:string {:min 1 :max 100 :error/message "Descricao obrigatoria"}]]
-   ])
-
-(defrecord Categoria [nome descricao instante-criacao])
-
-(def nova-categoria {
-                     :name  :nova-categoria
-                     :enter (fn [context]
-                              (let [
-                                    banco-dados (get-in context [:request :database])
-                                    payload (utilitarios/parse-json-body context)
-                                    ;aqui eu estou validando duas vezes?
-                                    valid? (m/validate schema-nova-categoria payload)
-                                    errors (me/humanize (m/explain schema-nova-categoria payload))
-                                    ;;deve ter outro jeito de criar uma funcao para atrasar a execução de um código
-                                    ja-existe-nome-cadastrado (fn [] (utilitarios/verifica-campo-banco-dados banco-dados :categorias :nome (:nome payload)))
-                                    ]
-
-                                (cond
-                                  (not valid?) (utilitarios/respond-validation-error-with-json context errors)
-
-                                  (ja-existe-nome-cadastrado) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe categoria com o nome passado"]})
-
-                              :else (let [{:keys [nome descricao]} payload
-                                          instance-criacao (LocalDateTime/now)
-                                          id (gera-chave-primaira)
-                                          categoria-para-salvar (->Categoria nome descricao instance-criacao)]
-
-                                      ;; curioso que o exemplo acha melhor acessar uma variável global do que acessar o atom via parametro
-                                      (swap! database utilitarios/insere-tabela :categorias id categoria-para-salvar)
-                                      (utilitarios/respond-with-json (assoc-in context [:request :database] @database) {:id id})
-
-                                      )
-                              )
-                            )
-                          )
-
-                 })
-
-
-
-
 
 
 (def schema-basico-novo-livro
@@ -179,7 +134,7 @@
     #{
        ["/autores" :post [db-interceptor novo-autor/handler]]
        ["/autores" :get [db-interceptor lista-autores/handler]]
-       ["/categorias" :post [db-interceptor nova-categoria]]
+       ["/categorias" :post [db-interceptor nova-categoria/handler]]
        ["/livros" :post [db-interceptor novo-livro]]
        ["/livros" :get [db-interceptor lista-livros/handler]]
        ["/livros/:id" :get [db-interceptor detalhe-livro/handler]]
