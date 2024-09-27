@@ -9,6 +9,7 @@
             [utilitarios :as utilitarios]
             [validacoes-conversoes :as validacoes-conversoes]
             [lista-livros]
+            [detalhe-livro]
             )
 
   (:import (java.time LocalDateTime)))
@@ -232,6 +233,7 @@
        ["/categorias" :post [db-interceptor nova-categoria]]
        ["/livros" :post [db-interceptor novo-livro]]
        ["/livros" :get [db-interceptor lista-livros/handler]]
+       ["/livros/:id" :get [db-interceptor detalhe-livro/handler]]
       }
     )
   )

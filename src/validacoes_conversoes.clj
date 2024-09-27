@@ -19,12 +19,19 @@
     (catch Exception _ ;; Se der erro ao converter retorna true, seguindo a ideia da bean validation
       true)))
 
+(defn string-date [pattern date]
+  (let [formatter (DateTimeFormatter/ofPattern pattern)
+        stringfied-date (.format date formatter)
+        ]
+      stringfied-date
+    )
+  )
+
 (defn decimal-string? [valor-string]
   (try
     (BigDecimal. valor-string)
-    true
     (catch Exception _ ;; Captura qualquer exceção lançada pela tentativa de conversão
-      false)))
+      nil)))
 
 (defn decimal-greater-than? [min valor-string]
 

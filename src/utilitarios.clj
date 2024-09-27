@@ -20,6 +20,9 @@
   (http/respond-with context 400 {"Content-Type" "application/json"} (json/write-str errors))
   )
 
+(defn respond-with-status [context status]
+  (http/respond-with context status)
+  )
 
 ;; {:autores [{:id 1 :dados {}} {:id 2 :dados {}}]}
 
@@ -28,6 +31,8 @@
 ;;(apply swap! database op args)
 (defn insere-tabela [banco-dados nome-tabela chave-primaria dados]
   ;;fnil retorna uma funcao multi-method. Quando ela for chamada, vai chamar a funcao conj passando o valor recebido no mapa(ou [] em caso de nil + o segundo argumento)
+  ;;aqui pode ser assoc usando a chave primaria como chave mesmo
+  ;;(assoc-in banco-dados [nome-tabela chave-primaria] (assoc dados :id chave-primaria))
   (update banco-dados nome-tabela (fnil conj []) (assoc dados :id chave-primaria))
   )
 
@@ -37,5 +42,12 @@
   (println "verifica-campo-banco-dados")
   (let [linhas (get banco-dados tabela)]
     (some #(= valor-buscado (get % campo)) linhas)
+    )
+  )
+
+(defn busca-item-por-campo [banco-dados tabela campo-para-igualdade valor]
+  (let [linhas (get banco-dados tabela)]
+    ;;aqui precisa de pos condicao para achar um so
+    (first (filter #(= valor (get % campo-para-igualdade)) linhas))
     )
   )
