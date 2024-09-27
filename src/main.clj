@@ -63,17 +63,18 @@
 (defn verifica-campo-banco-dados [banco-dados tabela campo valor-buscado]
   ;precisa pegar todos os valores do mapa autores
   ;dentro dos valores buscar se tem algum com email igual
-
+  (println "verifica-campo-banco-dados")
   (let [linhas (vals (get banco-dados tabela))]
     (some #(= valor-buscado (get % campo)) linhas)
     )
   )
 
-(defn verifica-existencia-pk [banco-dados tabela campo-pk valor-buscado]
-  ;precisa pegar todos os valores do mapa autores
-  ;dentro dos valores buscar se tem algum com email igual
-  (= valor-buscado (get-in banco-dados [(keyword tabela) (keyword campo-pk)]))
+(defn verifica-existencia-pk [banco-dados tabela valor-pk]
+
+  (println "verifica-existencia-pk")
+  (get-in banco-dados [(keyword tabela) valor-pk])
   )
+
 
 (def schema-novo-autor
   [:map
@@ -239,8 +240,8 @@
                        ;;na documentacao explica que quando usa funcao, as propriedades tem que ser passadas primeiro
                        [:fn {:error/message "Data mal formatada"} #(valid-date? "yyyy-MM-dd" %)]
                        [:fn {:error/message "Data não está no futuro"} #(future-date? "yyyy-MM-dd" %)]]]
-   [:id-categoria  [:string {:error/message "Categoria é obrigatória"}]]
-   [:id-autor  [:string {:error/message "Autor é obrigatório"}]]])
+   [:id-categoria  [:string {:min 1 :error/message "Categoria é obrigatória"}]]
+   [:id-autor  [:string {:min 1 :error/message "Autor é obrigatório"}]]])
 
 
 
@@ -254,31 +255,36 @@
                                     banco-dados (get-in context [:request :database])
                                     payload (parse-json-body context)
                                     ;aqui eu estou validando duas vezes?
-                                    validacao-basica? (m/validate schema-basico-novo-livro payload)
+                                    dados-basicos-estao-validos? (m/validate schema-basico-novo-livro payload)
                                     errors (me/humanize (m/explain schema-basico-novo-livro payload))
                                     ;;deve ter outro jeito de criar uma funcao para atrasar a execução de um código
                                     ja-existe-titulo-cadastrado (fn [] (verifica-campo-banco-dados banco-dados :livros :titulo (:titulo payload)))
-                                    existe-categoria (fn [] (verifica-existencia-pk banco-dados :categorias :id (:id-categoria payload)))
-                                    existe-autor (fn [] (verifica-existencia-pk banco-dados :autores :id (:id-autor payload)))
+                                    existe-categoria? (fn [] (verifica-existencia-pk banco-dados :categorias (:id-categoria payload)))
+                                    existe-autor? (fn [] (verifica-existencia-pk banco-dados :autores (:id-autor payload)))
                                     ]
 
                                 (cond
-                                  (not validacao-basica?) (respond-validation-error-with-json context errors)
-
-                                  :else (respond-with-json (assoc-in context [:request :database] @database) {:id 1})
-
-                                  ;(ja-existe-nome-cadastrado) (respond-validation-error-with-json context {:global-erros ["Já existe categoria com o nome passado"]})
-
-                                  ;:else (let [{:keys [nome descricao]} payload
-                                  ;            instance-criacao (LocalDateTime/now)
-                                  ;            id (gera-chave-primaira)
-                                  ;            categoria-para-salvar (->Categoria nome descricao instance-criacao)]
+                                  (not dados-basicos-estao-validos?) (respond-validation-error-with-json context errors)
                                   ;
-                                  ;        ;; curioso que o exemplo acha melhor acessar uma variável global do que acessar o atom via parametro
-                                  ;        (swap! database insere-tabela :categorias id categoria-para-salvar)
-                                  ;        (respond-with-json (assoc-in context [:request :database] @database) {:id id})
-                                  ;
-                                  ;        )
+                                  (ja-existe-titulo-cadastrado) (respond-validation-error-with-json context {:global-erros ["Já existe um livro com o mesmo título"]})
+
+                                  (not (existe-categoria?)) (respond-validation-error-with-json context {:global-erros ["Não existe a categoria referenciada"]})
+
+                                  (not (existe-autor?)) (respond-validation-error-with-json context {:global-erros ["Não existe o autor referenciado"]})
+
+
+                                  :else (let [{:keys [titulo resumo preco isbn data-lancamento id-categoria id-autor]} payload
+                                              data-lancamento-convertida (valid-date? "yyyy-MM-dd" data-lancamento)
+                                              preco-convertido (decimal-string? preco)
+                                              instance-criacao (LocalDateTime/now)
+                                              id (gera-chave-primaira)
+                                              livro-para-salvar (->Livro titulo resumo preco-convertido isbn data-lancamento-convertida id-categoria id-autor instance-criacao)]
+
+                                          ;; curioso que o exemplo acha melhor acessar uma variável global do que acessar o atom via parametro
+                                          (swap! database insere-tabela :livros id livro-para-salvar)
+                                          (respond-with-json (assoc-in context [:request :database] @database) {:id id})
+
+                                          )
                                   )
                                 )
                               )
