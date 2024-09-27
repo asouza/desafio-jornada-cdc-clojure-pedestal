@@ -10,6 +10,7 @@
             [validacoes-conversoes :as validacoes-conversoes]
             [lista-livros]
             [detalhe-livro]
+            [novo-pais]
             )
 
   (:import (java.time LocalDateTime)))
@@ -30,11 +31,20 @@
    :name :database-interceptor
    :enter (fn [context]
             (println "Entrando no db-interceptor")
+            (let [context-com-banco (update context :request assoc :database @database)
+                  context-com-funcao-atualiza-banco (assoc context-com-banco
+                                                      :funcao-altera-banco-dados
+                                                      (fn [funcao-transacional]
+                                                        (swap! database funcao-transacional)
+                                                      ))
+                  ]
+                context-com-funcao-atualiza-banco
+              )
 
-            (update context :request assoc :database @database)
             )
    :leave (fn [context]
             (println "Saindo do db-interceptor")
+            ;(println (get-in context [:request :database]))
             context
             )
    }
@@ -234,6 +244,7 @@
        ["/livros" :post [db-interceptor novo-livro]]
        ["/livros" :get [db-interceptor lista-livros/handler]]
        ["/livros/:id" :get [db-interceptor detalhe-livro/handler]]
+       ["/paises" :post [db-interceptor novo-pais/handler]]
       }
     )
   )

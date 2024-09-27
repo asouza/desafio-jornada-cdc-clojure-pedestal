@@ -5,6 +5,10 @@
     )
   )
 
+(defn gera-chave-primaira []
+  (str (gensym "i"))
+  )
+
 ;;##paraTreinar aqui eu posso usar o lance das specs, para definir bem a entrada. Brincar de pre e pos condicoes
 (defn parse-json-body [context]
   (let [body (slurp (get-in context [:request :body]))] ;; Converte o corpo para string
@@ -40,6 +44,7 @@
   ;precisa pegar todos os valores do mapa autores
   ;dentro dos valores buscar se tem algum com email igual
   (println "verifica-campo-banco-dados")
+  ;(println banco-dados)
   (let [linhas (get banco-dados tabela)]
     (some #(= valor-buscado (get % campo)) linhas)
     )
