@@ -56,3 +56,10 @@
     (first (filter #(= valor (get % campo-para-igualdade)) linhas))
     )
   )
+
+(defn busca-todos-itens-por-campo [banco-dados tabela campo-para-igualdade valor]
+  (let [linhas (get banco-dados tabela)]
+    ;;aqui precisa de pos condicao para achar um so
+    (filter #(= valor (get % campo-para-igualdade)) linhas)
+    )
+  )

@@ -11,6 +11,7 @@
             [lista-livros]
             [detalhe-livro]
             [novo-pais]
+            [novo-estado]
             )
 
   (:import (java.time LocalDateTime)))
@@ -245,6 +246,7 @@
        ["/livros" :get [db-interceptor lista-livros/handler]]
        ["/livros/:id" :get [db-interceptor detalhe-livro/handler]]
        ["/paises" :post [db-interceptor novo-pais/handler]]
+       ["/paises/:id-pais/estados" :post [db-interceptor novo-estado/handler]]
       }
     )
   )
