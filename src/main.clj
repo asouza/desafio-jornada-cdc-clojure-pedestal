@@ -15,6 +15,8 @@
             [lista-autores]
             [nova-categoria]
             [novo-livro]
+            [carrinho]
+            [carrinhos]
             )
 
   (:import (java.time LocalDateTime)))
@@ -68,6 +70,8 @@
        ["/livros/:id" :get [db-interceptor detalhe-livro/handler]]
        ["/paises" :post [db-interceptor novo-pais/handler]]
        ["/paises/:id-pais/estados" :post [db-interceptor novo-estado/handler]]
+       ["/carrinho/passo-1" :post [db-interceptor carrinho/handler-passo-1]]
+       ["/carrinhos" :get [db-interceptor carrinhos/handler]]
       }
     )
   )
