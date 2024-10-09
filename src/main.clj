@@ -19,6 +19,7 @@
             [carrinhos]
             [datommic-schema-autor]
             [datomic-cria-banco]
+            [datomic.api :as d]
             )
 
   (:import (java.time LocalDateTime)))
@@ -39,14 +40,18 @@
    :name :database-interceptor
    :enter (fn [context]
             (println "Entrando no db-interceptor")
-            (let [context-com-banco (update context :request assoc :database @database)
-                  context-com-funcao-atualiza-banco (assoc context-com-banco
-                                                      :funcao-altera-banco-dados
-                                                      (fn [funcao-transacional]
-                                                        (swap! database funcao-transacional)
-                                                      ))
+            (let [db-uri "datomic:dev://localhost:4334/cdc"
+                  conexao (d/connect db-uri)
+                  versao-atual-banco (d/db conexao)
+                  funcao-transacao (fn [mapa]
+                                     (d/transact conexao mapa)
+                                     )
+                  ;preciso mesmo colocar na request? eu vou gerar um novo contexto para uma request específica, acho que já resolvia
+                  context-com-banco (update context :request assoc :conexao conexao :db versao-atual-banco :funcao-transacao funcao-transacao)
+
                   ]
-                context-com-funcao-atualiza-banco
+              ;(d/transact conn schema-autor)
+                context-com-banco
               )
 
             )
@@ -75,7 +80,7 @@
        ["/carrinho/passo-1" :post [db-interceptor carrinho/handler-passo-1]]
        ["/carrinhos" :get [db-interceptor carrinhos/handler]]
        ["/datomic-cria-banco" :post [datomic-cria-banco/handler]]
-       ["/datomic-registra-schema-autor" :post [datommic-schema-autor/handler]]
+       ["/datomic-registra-schema-autor" :post [db-interceptor datommic-schema-autor/handler]]
       }
     )
   )

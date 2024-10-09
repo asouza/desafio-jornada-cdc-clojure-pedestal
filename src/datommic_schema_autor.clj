@@ -21,10 +21,9 @@
    :name :datomic-registra-schema-autor
    :enter (fn [context]
             (let [
-                  db-uri "datomic:dev://localhost:4334/cdc"
-                  conn (d/connect db-uri)
+                    funcao-transacao (get-in context [:request :funcao-transacao])
                   ]
-              (d/transact conn schema-autor)
+              (funcao-transacao schema-autor)
               (utilitarios/respond-with-status context 200)
               ))
    }
