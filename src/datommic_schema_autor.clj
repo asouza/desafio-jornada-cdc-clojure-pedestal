@@ -14,18 +14,33 @@
                     :db/valueType :db.type/string
                     :db/cardinality :db.cardinality/one
                     :db/doc "email do autor"}
+
+                   {:db/ident :autor/descricao
+                    :db/valueType :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db/doc "descricao do autor"}
+
                    ])
+
+;deixando perto o que faz sentido estar perto
+;acho que podia ter um arquivo como tudo-sobre-autor (record e schema do banco)
+(defn autor-to-schema
+  "Recebe um record de autor e retorna no schema definido para salvar"
+  [autor]
+  {
+    :autor/nome (:nome autor)
+    :autor/email (:email autor)
+    :autor/descricao (:descricao autor)
+   }
+  )
 
 (def handler
   {
    :name :datomic-registra-schema-autor
    :enter (fn [context]
-            (let [
-                    funcao-transacao (get-in context [:request :funcao-transacao])
-                  ]
-              (funcao-transacao schema-autor)
+              (utilitarios/executa-transacao context schema-autor)
               (utilitarios/respond-with-status context 200)
-              ))
+              )
    }
   )
 

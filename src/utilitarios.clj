@@ -63,3 +63,16 @@
     (filter #(= valor (get % campo-para-igualdade)) linhas)
     )
   )
+
+
+(defn executa-transacao
+  "Executa uma transacao supondo que o context passado tem uma chave [:request :funcao-transacao]
+  que retorna uma função que recebe um mapa como argumento."
+  [context mapa]
+
+  (let [
+        funcao-transacao (get-in context [:request :funcao-transacao])
+        ]
+      (funcao-transacao [mapa])
+    )
+  )

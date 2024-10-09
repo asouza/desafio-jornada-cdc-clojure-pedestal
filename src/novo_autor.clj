@@ -2,7 +2,8 @@
   (:require
     [utilitarios]
     [malli.core :as m]
-    [malli.error :as me])
+    [malli.error :as me]
+    [datommic-schema-autor])
   (:import (java.time LocalDateTime)))
 
 (def schema-novo-autor
@@ -18,13 +19,13 @@
                  :name :novo-autor
                  :enter (fn [context]
                           (let [
-                                banco-dados (get-in context [:request :database])
                                 payload (utilitarios/parse-json-body context)
                                 ;aqui eu estou validando duas vezes?
                                 valid? (m/validate schema-novo-autor payload)
                                 errors (me/humanize (m/explain schema-novo-autor payload))
                                 ;;deve ter outro jeito de criar uma funcao para atrasar a execução de um código
-                                ja-existe-email-cadastrado (fn [] (utilitarios/verifica-campo-banco-dados banco-dados :autores :email (:email payload)))
+                                ;ja-existe-email-cadastrado (fn [] (utilitarios/verifica-campo-banco-dados banco-dados :autores :email (:email payload)))
+                                ja-existe-email-cadastrado (fn [] false)
                                 ]
 
                             (cond
@@ -34,14 +35,11 @@
 
                               :else (let [{:keys [nome email descricao]} payload
                                           instance-criacao (LocalDateTime/now)
-                                          id (utilitarios/gera-chave-primaira)
                                           autor-para-salvar (->Autor nome email descricao instance-criacao)
-                                          nova-versao-banco-dados ((:funcao-altera-banco-dados context) (fn [ultima-versao-banco-dados]
-                                                                                                          (utilitarios/insere-tabela ultima-versao-banco-dados :autores id autor-para-salvar))
-                                                                   )
                                           ]
 
-                                      (utilitarios/respond-with-json context {:id id})
+                                      (utilitarios/executa-transacao context (datommic-schema-autor/autor-to-schema autor-para-salvar))
+                                      (utilitarios/respond-with-status context 200)
 
                                       )
                               )
