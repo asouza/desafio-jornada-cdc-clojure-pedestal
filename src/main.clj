@@ -17,6 +17,8 @@
             [novo-livro]
             [carrinho]
             [carrinhos]
+            [datommic-schema-autor]
+            [datomic-cria-banco]
             )
 
   (:import (java.time LocalDateTime)))
@@ -72,6 +74,8 @@
        ["/paises/:id-pais/estados" :post [db-interceptor novo-estado/handler]]
        ["/carrinho/passo-1" :post [db-interceptor carrinho/handler-passo-1]]
        ["/carrinhos" :get [db-interceptor carrinhos/handler]]
+       ["/datomic-cria-banco" :post [datomic-cria-banco/handler]]
+       ["/datomic-registra-schema-autor" :post [datommic-schema-autor/handler]]
       }
     )
   )
