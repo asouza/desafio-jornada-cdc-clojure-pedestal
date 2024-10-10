@@ -14,8 +14,6 @@
    [:descricao  [:string {:min 1 :max 100 :error/message "Descricao obrigatoria"}]]
    ])
 
-(defrecord Autor [nome email descricao instante-criacao])
-
 (defn ja-existe-email-cadastrado [context autor]
   (let [
         dados (get-in context [:request :db])
@@ -53,13 +51,9 @@
 
                               (ja-existe-email-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe autor com email cadastrado"]})
 
-                              :else (let [{:keys [nome email descricao]} payload
-                                          instance-criacao (LocalDateTime/now)
-                                          autor-para-salvar (->Autor nome email descricao instance-criacao)
-                                          ]
-
-                                      (utilitarios/executa-transacao context [(datommic-schema-autor/autor-to-schema autor-para-salvar)])
-                                      (utilitarios/respond-with-status context 200)
+                              :else (do
+                                        (utilitarios/executa-transacao context [(datommic-schema-autor/autor-to-schema payload)])
+                                        (utilitarios/respond-with-status context 200)
 
                                       )
                               )
