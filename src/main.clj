@@ -40,8 +40,9 @@
             (let [db-uri "datomic:dev://localhost:4334/cdc"
                   conexao (d/connect db-uri)
                   versao-atual-banco (d/db conexao)
-                  funcao-transacao (fn [mapa]
-                                     (d/transact conexao mapa)
+                  funcao-transacao (fn [dados]
+                                     ;dados pode ser um mapa ou um array
+                                     @(d/transact conexao dados)
                                      )
                   ;preciso mesmo colocar na request? eu vou gerar um novo contexto para uma request específica, acho que já resolvia
                   context-com-banco (update context :request assoc :conexao conexao :db versao-atual-banco :funcao-transacao funcao-transacao)

@@ -73,6 +73,6 @@
   (let [
         funcao-transacao (get-in context [:request :funcao-transacao])
         ]
-      (funcao-transacao [mapa])
+      (funcao-transacao mapa)
     )
   )

@@ -25,7 +25,7 @@
 ;deixando perto o que faz sentido estar perto
 ;acho que podia ter um arquivo como tudo-sobre-autor (record e schema do banco)
 (defn autor-to-schema
-  "Recebe um record de autor e retorna no schema definido para salvar"
+  "Recebe um mapa de autor e retorna no schema definido para salvar"
   [autor]
   {
     :autor/nome (:nome autor)
