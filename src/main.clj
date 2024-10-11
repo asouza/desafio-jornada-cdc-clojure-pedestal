@@ -44,7 +44,14 @@
                   versao-atual-banco (d/db conexao)
                   funcao-transacao (fn [dados]
                                      ;dados pode ser um mapa ou um array
-                                     @(d/transact conexao dados)
+                                     (let [
+                                           resultado @(d/transact conexao dados)
+                                           ]
+                                       ;retornando todos ids permanentes gerados na transacao
+                                       ;a documentacao disse que esses temporarios estão mapeados para os permanentes
+                                       (vals (:tempids resultado))
+                                       )
+
                                      )
                   ;preciso mesmo colocar na request? eu vou gerar um novo contexto para uma request específica, acho que já resolvia
                   context-com-banco (update context :request assoc :conexao conexao :db versao-atual-banco :funcao-transacao funcao-transacao)

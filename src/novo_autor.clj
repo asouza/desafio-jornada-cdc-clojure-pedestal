@@ -23,6 +23,7 @@
         query '[:find ?autor-email
                 :in $ ?email
                 ;pq eu preciso passar esse filtro antes? preciso entender melhor
+                ;não precisa, testei no cadastro de categoria.
                 :where
                 [?e :autor/email ?autor-email]
                 [?e :autor/email ?email]
@@ -51,9 +52,11 @@
 
                               (ja-existe-email-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe autor com email cadastrado"]})
 
-                              :else (do
-                                        (utilitarios/executa-transacao context [(datommic-schema-autor/autor-to-schema payload)])
-                                        (utilitarios/respond-with-status context 200)
+                              :else (let [
+                                            novo-id (utilitarios/executa-transacao context [(datommic-schema-autor/autor-to-schema payload)])
+                                          ]
+
+                                        (utilitarios/respond-with-json context {:id novo-id})
 
                                       )
                               )

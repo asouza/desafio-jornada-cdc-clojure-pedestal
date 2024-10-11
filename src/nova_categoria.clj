@@ -3,7 +3,8 @@
     [utilitarios]
     [malli.core :as m]
     [malli.error :as me]
-    [datomic-schema-categoria])
+    [datomic-schema-categoria]
+    [datomic.api :as d])
   (:import (java.time LocalDateTime))
   )
 
@@ -15,8 +16,22 @@
 
 (defrecord Categoria [nome descricao instante-criacao])
 
-(defn- ja-existe-nome-cadastrado [dados]
-  false
+(defn- ja-existe-nome-cadastrado [context categoria]
+  (let [
+        dados (get-in context [:request :db])
+        nome-buscado (:nome categoria)
+        query '[:find ?e
+                :in $ ?nome-buscado
+                ;pq eu preciso passar esse filtro antes? preciso entender melhor
+                :where
+                ;[?e :categoria/nome ?nome]
+                [?e :categoria/nome ?nome-buscado]
+                ]
+        categorias-encontradas (d/q query dados nome-buscado)
+        ]
+
+    (seq categorias-encontradas)
+    )
   )
 
 (def handler {
@@ -32,11 +47,13 @@
                                 (cond
                                   (not valid?) (utilitarios/respond-validation-error-with-json context errors)
 
-                                  (ja-existe-nome-cadastrado context) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe categoria com o nome passado"]})
+                                  (ja-existe-nome-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe categoria com o nome passado"]})
 
-                                  :else (do
-                                          (utilitarios/executa-transacao context [(datomic-schema-categoria/categoria-to-schema payload)])
-                                          (utilitarios/respond-with-status context 200)
+                                  :else (let [
+                                               novo-id (utilitarios/executa-transacao context [(datomic-schema-categoria/categoria-to-schema payload)])
+                                              ]
+
+                                          (utilitarios/respond-with-json context {:id novo-id})
                                           )
                                   )
                                 )
