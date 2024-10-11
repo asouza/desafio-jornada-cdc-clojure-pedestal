@@ -17,6 +17,8 @@
             [datommic-schema-autor]
             [datomic-cria-banco]
             [datomic.api :as d]
+            [datomic-schema-categoria]
+
             )
 
   (:import (java.time LocalDateTime)))
@@ -37,7 +39,7 @@
    :name :database-interceptor
    :enter (fn [context]
             (println "Entrando no db-interceptor")
-            (let [db-uri "datomic:dev://localhost:4334/cdc"
+            (let [db-uri "datomic:dev://localhost:4334/cdcv3"
                   conexao (d/connect db-uri)
                   versao-atual-banco (d/db conexao)
                   funcao-transacao (fn [dados]
@@ -79,6 +81,7 @@
        ["/carrinhos" :get [db-interceptor carrinhos/handler]]
        ["/datomic-cria-banco" :post [datomic-cria-banco/handler]]
        ["/datomic-registra-schema-autor" :post [db-interceptor datommic-schema-autor/handler]]
+       ["/datomic-registra-schema-categoria" :post [db-interceptor datomic-schema-categoria/handler]]
       }
     )
   )
