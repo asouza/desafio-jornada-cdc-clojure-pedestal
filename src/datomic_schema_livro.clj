@@ -31,6 +31,7 @@
               :db/cardinality :db.cardinality/one
               }
 
+             ;aqui era melhor ter chamado de autor mesmo.
              {:db/ident :livro/id-autor
               :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/one
