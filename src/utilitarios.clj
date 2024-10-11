@@ -3,7 +3,12 @@
     [clojure.data.json :as json]
     [io.pedestal.http :as http]
     )
+  (:import [java.util Date]
+          [java.time LocalDate ZoneId Instant])
   )
+
+(defn local-date->date [local-date]
+  (Date/from (.toInstant (.atStartOfDay local-date (ZoneId/systemDefault)))))
 
 (defn gera-chave-primaira []
   (str (gensym "i"))

@@ -9,15 +9,16 @@
 ;Ao mesmo tempo disse que meu código está ok
 (defn- converte-linha-autor-saida-lista [autor]
   {
-   :nome (autor 0)
-   :email (autor 1)
-   :descricao (autor 2)
+   :id (autor 0)
+   :nome (autor 1)
+   :email (autor 2)
+   :descricao (autor 3)
    }
   )
 
 (defn- busca-autores [dados]
   (let [
-        query '[:find ?nome ?email ?descricao
+        query '[:find ?e ?nome ?email ?descricao
                 :where
                   [?e :autor/email ?email]
                   [?e :autor/nome ?nome]
