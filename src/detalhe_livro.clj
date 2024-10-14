@@ -16,7 +16,7 @@
               :nome (get-in livro [:livro/id-autor :autor/nome])
              }
      :categoria {
-             :nome (get-in livro [:livro/id-categoria :categoria/nome])
+             :nome  (get-in livro [:livro/id-categoria :categoria/nome])
              }
      }
 

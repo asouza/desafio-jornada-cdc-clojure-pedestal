@@ -3,7 +3,8 @@
     [utilitarios]
     [malli.core :as m]
     [malli.error :as me]
-    [datomic-schema-livro])
+    [datomic-schema-livro]
+    [datomic.api :as d])
   )
 
 
@@ -27,16 +28,31 @@
    [:id-autor  [number? {:min 1 :error/message "Autor é obrigatório"}]]])
 
 
-(defn- ja-existe-titulo-cadastrado? []
-  false
+(defn- ja-existe-titulo-cadastrado? [dados livro]
+  (let [
+        titulo-buscado (:titulo livro)
+        query '[:find ?e
+                :in $ ?titulo-buscado
+                :where
+                [?e :livro/titulo ?titulo-buscado]
+                ]
+        livros (d/q query dados titulo-buscado)
+        ]
+    ;nao da para simplesmente retornar os livros, pq ele um hashset. Por mais que esteja vazio, não é nil.
+    ;se não é nil, é true
+        (seq livros)
+
+  )
   )
 
-(defn- existe-categoria? []
-  true
+(defn- existe-categoria? [dados categoria-id]
+  (d/pull dados '[:categoria/nome]
+          categoria-id)
   )
 
-(defn- existe-autor? []
-  true
+(defn- existe-autor? [dados autor-id]
+  (d/pull dados '[:autor/nome]
+          autor-id)
   )
 
 
@@ -48,16 +64,17 @@
                                 ;aqui eu estou validando duas vezes?
                                 dados-basicos-estao-validos? (m/validate schema-basico-novo-livro payload)
                                 errors (me/humanize (m/explain schema-basico-novo-livro payload))
+                                dados (get-in context [:request :db])
                                 ]
 
                             (cond
                               (not dados-basicos-estao-validos?) (utilitarios/respond-validation-error-with-json context errors)
                               ;
-                              (ja-existe-titulo-cadastrado?) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe um livro com o mesmo título"]})
+                              (ja-existe-titulo-cadastrado? dados payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe um livro com o mesmo título"]})
 
-                              (not (existe-categoria?)) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe a categoria referenciada"]})
+                              (not (existe-categoria? dados (:id-categoria payload))) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe a categoria referenciada"]})
 
-                              (not (existe-autor?)) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe o autor referenciado"]})
+                              (not (existe-autor? dados (:id-autor payload))) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe o autor referenciado"]})
 
 
                               :else (let [
