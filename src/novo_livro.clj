@@ -4,7 +4,8 @@
     [malli.core :as m]
     [malli.error :as me]
     [datomic-schema-livro]
-    [datomic.api :as d])
+    [datomic.api :as d]
+    [datomic-lib])
   )
 
 
@@ -45,17 +46,6 @@
   )
   )
 
-(defn- existe-categoria? [dados categoria-id]
-  (d/pull dados '[:categoria/nome]
-          categoria-id)
-  )
-
-(defn- existe-autor? [dados autor-id]
-  (d/pull dados '[:autor/nome]
-          autor-id)
-  )
-
-
 (def handler {
                  :name :novo-livro
                  :enter (fn [context]
@@ -70,11 +60,11 @@
                             (cond
                               (not dados-basicos-estao-validos?) (utilitarios/respond-validation-error-with-json context errors)
                               ;
-                              (ja-existe-titulo-cadastrado? dados payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe um livro com o mesmo título"]})
+                              (datomic-lib/busca-entidades-por-unico-atributo dados :livro/titulo (:titulo payload)) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe um livro com o mesmo título"]})
 
-                              (not (existe-categoria? dados (:id-categoria payload))) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe a categoria referenciada"]})
+                              (not (datomic-lib/busca-entidade dados :categoria/nome (:id-categoria payload))) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe a categoria referenciada"]})
 
-                              (not (existe-autor? dados (:id-autor payload))) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe o autor referenciado"]})
+                              (not (datomic-lib/busca-entidade dados :autor/nome (:id-autor payload))) (utilitarios/respond-validation-error-with-json context {:global-erros ["Não existe o autor referenciado"]})
 
 
                               :else (let [
