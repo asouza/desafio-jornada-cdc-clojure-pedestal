@@ -19,7 +19,7 @@
             [datomic.api :as d]
             [datomic-schema-categoria]
             [datomic-schema-livro]
-
+            [datomic-schema-pais]
             )
 
   (:import (java.time LocalDateTime)))
@@ -91,6 +91,7 @@
        ["/datomic-registra-schema-autor" :post [db-interceptor datommic-schema-autor/handler]]
        ["/datomic-registra-schema-categoria" :post [db-interceptor datomic-schema-categoria/handler]]
        ["/datomic-registra-schema-livro" :post [db-interceptor datomic-schema-livro/handler]]
+       ["/datomic-registra-schema-pais" :post [db-interceptor datomic-schema-pais/handler]]
       }
     )
   )
