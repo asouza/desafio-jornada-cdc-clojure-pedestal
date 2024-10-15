@@ -4,8 +4,11 @@
     [validacoes-conversoes]
     [malli.core :as m]
     [malli.error :as me]
+    [datomic-lib]
+    [datomic-schema-estado]
+    [datomic.api :as d]
     )
-  (:import (java.time LocalDateTime)))
+  )
 
 (def schema-novo-estado
   [:map
@@ -15,50 +18,46 @@
 
 
 
-(defrecord Estado [nome id-pais instante-criacao])
-
-(defn- ja-tem-estado-com-mesmo-nome? [banco-dados id-pais nome-estado]
-    (let [estados-do-pais (utilitarios/busca-todos-itens-por-campo banco-dados :estados :id-pais id-pais)
+(defn- ja-tem-estado-com-mesmo-nome? [dados id-pais nome-estado]
+    (let [
+          query '[:find ?e
+                  :in $ ?id-pais ?nome-estado
+                  :where
+                  [?e :estado/pais ?id-pais]
+                  [?e :estado/nome ?nome-estado]
+                  ]
+          entidades (d/q query dados id-pais nome-estado)
           ]
-        (some #(= nome-estado (:nome %)) estados-do-pais)
+        (seq entidades)
       )
 
-  )
-
-(defn- pais-existe? [banco-dados id-pais]
-  (utilitarios/busca-item-por-campo banco-dados :paises :id id-pais)
   )
 
 (def handler {
                  :name :novo-estado
                  :enter (fn [context]
                           (let [
-                                id-pais (get-in context [:request :path-params :id-pais])
-                                banco-dados (get-in context [:request :database])
+                                id-pais (Long/parseLong (get-in context [:request :path-params :id-pais]))
                                 payload (utilitarios/parse-json-body context)
                                 ;aqui eu estou validando duas vezes?
                                 valido? (m/validate schema-novo-estado payload)
                                 errors (me/humanize (m/explain schema-novo-estado payload))
+                                dados (get-in context [:request :db])
                                 ]
 
                             (cond
                               (not valido?) (utilitarios/respond-validation-error-with-json context errors)
                               ;
-                              (not (pais-existe? banco-dados id-pais)) (utilitarios/respond-validation-error-with-json context {:global-erros ["O pais não existe"]})
+                              (not (datomic-lib/busca-entidade dados :pais/nome id-pais)) (utilitarios/respond-validation-error-with-json context {:global-erros ["O pais não existe"]})
 
-                              (ja-tem-estado-com-mesmo-nome? banco-dados id-pais (:nome payload)) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já tem estado com o mesmo nome para este país"]})
+                              (ja-tem-estado-com-mesmo-nome? dados id-pais (:nome payload)) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já tem estado com o mesmo nome para este país"]})
 
 
-                              :else (let [{:keys [nome]} payload
-                                          instance-criacao (LocalDateTime/now)
-                                          id (utilitarios/gera-chave-primaira)
-                                          estado-para-salvar (->Estado nome id-pais instance-criacao)
-                                          nova-versao-banco-dados ((:funcao-altera-banco-dados context)
-                                                                   (fn [ultima-versao-banco-dados]
-                                                                        (utilitarios/insere-tabela ultima-versao-banco-dados :estados id estado-para-salvar))
-                                                                   )                                          ]
+                              :else (let [
+                                          novo-id (utilitarios/executa-transacao context [(datomic-schema-estado/to-schema (assoc payload :id-pais id-pais))])
+                                          ]
 
-                                      (utilitarios/respond-with-json context {:id id})
+                                      (utilitarios/respond-with-json context {:id novo-id})
 
                                       )
                               )

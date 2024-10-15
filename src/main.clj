@@ -20,6 +20,7 @@
             [datomic-schema-categoria]
             [datomic-schema-livro]
             [datomic-schema-pais]
+            [datomic-schema-estado]
             )
 
   (:import (java.time LocalDateTime)))
@@ -92,6 +93,7 @@
        ["/datomic-registra-schema-categoria" :post [db-interceptor datomic-schema-categoria/handler]]
        ["/datomic-registra-schema-livro" :post [db-interceptor datomic-schema-livro/handler]]
        ["/datomic-registra-schema-pais" :post [db-interceptor datomic-schema-pais/handler]]
+       ["/datomic-registra-schema-estado" :post [db-interceptor datomic-schema-estado/handler]]
       }
     )
   )
