@@ -25,3 +25,8 @@
 
     )
   )
+
+(defn busca-todos-atributos-entidade [dados id]
+  (println (str "======= " id))
+  (d/pull dados '[*] id)
+  )

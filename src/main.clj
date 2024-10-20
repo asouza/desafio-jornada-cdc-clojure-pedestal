@@ -21,6 +21,7 @@
             [datomic-schema-livro]
             [datomic-schema-pais]
             [datomic-schema-estado]
+            [datomic-schema-carrinho]
             )
 
   (:import (java.time LocalDateTime)))
@@ -94,6 +95,7 @@
        ["/datomic-registra-schema-livro" :post [db-interceptor datomic-schema-livro/handler]]
        ["/datomic-registra-schema-pais" :post [db-interceptor datomic-schema-pais/handler]]
        ["/datomic-registra-schema-estado" :post [db-interceptor datomic-schema-estado/handler]]
+       ["/datomic-registra-schema-carrinno" :post [db-interceptor datomic-schema-carrinho/handler]]
       }
     )
   )

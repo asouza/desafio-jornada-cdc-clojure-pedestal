@@ -2,7 +2,10 @@
   (:require
     [utilitarios]
     [malli.core :as m]
-    [malli.error :as me])
+    [malli.error :as me]
+    [datomic-lib]
+    [datomic.api :as d]
+    [datomic-schema-carrinho])
   (:import (java.time LocalDateTime))
   )
 
@@ -32,13 +35,13 @@
               )
            )
          payload
-         )
-  )
+         ))
+
 
 (def schema-novo-carrinho
   [:vector {:min 1}
    [:map
-    [:id-livro [:string {:min 1 :max 20 :error/message "Id do livro é obrigatório"}]]
+    [:id-livro [:int {:min 1 :error/message "Id do livro precisa ser um numero"}]]
     ;[:quantidade  [:and [:int {:error/message "Quantidade precisa ser um inteiro"}] [:> 0] ]]
     [:quantidade  [:int {:min 1 :error/message "Quantidade precisa ser um inteiro"}]]
     ]
@@ -47,12 +50,20 @@
 
 (defrecord Carrinho [itens instante-criacao])
 
-(defn- todos-ids-livros-existem [banco-dados payload]
-  (every? (fn [item]
-            (utilitarios/busca-item-por-campo banco-dados :livros :id (:id-livro item))
-            )
-          payload)
+(defn- mapeia-item-para-id-livro [item]
+  (:id-livro item)
   )
+
+(defn- todos-ids-livros-existem [banco-dados payload]
+  (let [
+          ids-livros-payload (map mapeia-item-para-id-livro payload)
+          ids-encontrados (d/pull-many banco-dados '[:db/id] ids-livros-payload)
+        ]
+    (= (count ids-encontrados) (count ids-livros-payload))
+    )
+
+  )
+
 
 (defn- todos-ids-livros-diferentes? [payload]
   (let [ids (map (fn [item]
@@ -62,12 +73,17 @@
     (= (count ids) (count (set ids))))
   )
 
+(defn- carrega-livro-por-id [dados]
+  ;vai retornar a funcao faltando o argumento do id
+  (partial datomic-lib/busca-todos-atributos-entidade dados)
+  )
+
 (def handler-passo-1 {
     :name :carrinho-passo-1
 
     :enter (fn [context]
           (let [
-                banco-dados (get-in context [:request :database])
+                banco-dados (get-in context [:request :db])
                 payload (utilitarios/parse-json-body context)
                 valido? (m/validate schema-novo-carrinho payload)
                 errors (me/humanize (m/explain schema-novo-carrinho payload))
@@ -80,17 +96,12 @@
               (not (todos-ids-livros-existem banco-dados payload)) (utilitarios/respond-validation-error-with-json context {:global-erros ["Tem livro referenciado que nao existe"]})
 
               :else (let [
-                          itens-mapeados (transforma-item-carrinho banco-dados payload)
-                          instance-criacao (LocalDateTime/now)
-                          id (utilitarios/gera-chave-primaira)
-                          carrinho-para-salvar (->Carrinho itens-mapeados  instance-criacao)
+                          id-carrinho (java.util.UUID/randomUUID)
+                          carrinho (datomic-schema-carrinho/to-schema id-carrinho payload (carrega-livro-por-id banco-dados))
+                          id-carrinho-salvo (utilitarios/executa-transacao context [carrinho])
                           ]
-                      ((:funcao-altera-banco-dados context) (fn [ultima-versao-banco-dados]
-                                                              (utilitarios/insere-tabela ultima-versao-banco-dados :carrinhos id carrinho-para-salvar))
-                       )
 
-
-                      (utilitarios/respond-with-json context {:id id})
+                      (utilitarios/respond-with-json context {:id id-carrinho-salvo})
                       )
               )
 
