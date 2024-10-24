@@ -24,6 +24,7 @@
 !resources/
 !src/
 !test/
+!project.clj
 
 # ------------------------
 # Include Clojure tools
