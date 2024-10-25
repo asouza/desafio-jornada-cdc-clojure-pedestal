@@ -28,13 +28,14 @@
                 [?e :autor/email ?autor-email]
                 [?e :autor/email ?email]
                ]
-        ;; emails (d/q query dados email)
+        emails (d/q query dados email)
         ]
 
     ;Eu tinha feito assim => ((not (empty? emails)))
     ;a IDE mandou eu fazer assim
-    ;; (seq emails)
-    false
+    (println "-----")
+    (println (seq emails) )
+    (seq emails) 
     )
   )
 

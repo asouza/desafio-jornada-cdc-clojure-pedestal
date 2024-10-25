@@ -27,7 +27,9 @@
                                   :descricao "descricao da pessoa autora"
                                   }))
 
-
+(def dados #{[1 :autor/nome "Larissa"]
+              [1 :autor/email "email@email"]
+              [1 :autor/descricao "alguma descricao"]})
 
 
 (def contexto {
@@ -35,6 +37,7 @@
              :funcao-transacao executa-transacao-datomic
              :body {
              } 
+             :db dados
              }           
 })
 
