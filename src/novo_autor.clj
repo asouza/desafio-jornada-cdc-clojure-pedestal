@@ -28,39 +28,31 @@
                 [?e :autor/email ?autor-email]
                 [?e :autor/email ?email]
                ]
-        emails (d/q query dados email)
+        ;; emails (d/q query dados email)
         ]
 
     ;Eu tinha feito assim => ((not (empty? emails)))
     ;a IDE mandou eu fazer assim
-    (seq emails)
+    ;; (seq emails)
+    false
     )
   )
 
 (def handler {
                  :name :novo-autor
                  :enter (fn [context]
-                          (let [
-                                payload (utilitarios/parse-json-body context)
+                          (let [payload (utilitarios/parse-json-body context)
                                 ;aqui eu estou validando duas vezes?
                                 valid? (m/validate schema-novo-autor payload)
-                                errors (me/humanize (m/explain schema-novo-autor payload))
-                                ]
-
+                                errors (me/humanize (m/explain schema-novo-autor payload))] 
                             (cond
                               (not valid?) (utilitarios/respond-validation-error-with-json context errors)
 
                               (ja-existe-email-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe autor com email cadastrado"]})
 
-                              :else (let [
-                                            novo-id (utilitarios/executa-transacao context [(datommic-schema-autor/autor-to-schema payload)])
-                                          ]
+                              :else (let [novo-id (utilitarios/executa-transacao context [(datommic-schema-autor/autor-to-schema payload)])]
 
-                                        (utilitarios/respond-with-json context {:id novo-id})
-
-                                      )
-                              )
-                            )
+                                      (utilitarios/respond-with-json context {:id novo-id}))))
                           )
 
                  })
