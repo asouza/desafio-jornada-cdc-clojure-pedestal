@@ -2,6 +2,7 @@
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.test :as test]
+            [io.pedestal.http.body-params :refer [body-params]]
             [malli.core :as m]
             [malli.experimental.time :as met]
             [malli.registry :as mr]
@@ -79,7 +80,7 @@
 (def routes
   (route/expand-routes
     #{
-       ["/autores" :post [db-interceptor novo-autor/handler]]
+       ["/autores" :post [(body-params) db-interceptor novo-autor/handler]]
        ["/autores" :get [db-interceptor lista-autores/handler]]
        ["/categorias" :post [db-interceptor nova-categoria/handler]]
        ["/livros" :post [db-interceptor novo-livro/handler]]

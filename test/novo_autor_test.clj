@@ -10,9 +10,6 @@
    
   )
 
-(defn string-to-reader [s]
-  (io/reader (char-array s))
-  )
 
 (defn executa-transacao-datomic [entidade]
   (println entidade)
@@ -21,31 +18,45 @@
 
 
 
-(def payload (json/write-str {
-                                  :nome "Larissa"
-                                  :email "email@email"
-                                  :descricao "descricao da pessoa autora"
-                                  }))
+(def payload {:nome "Larissa"
+              :email "email@email"
+              :descricao "descricao da pessoa autora"})
 
-(def dados #{[1 :autor/nome "Larissa"]
-              [1 :autor/email "email@email"]
+(def dados-com-email-duplicado #{[1 :autor/nome "Larissa"]
+              [1 :autor/email "email2@email"]
               [1 :autor/descricao "alguma descricao"]})
 
 
-(def contexto {
-   :request {
-             :funcao-transacao executa-transacao-datomic
-             :body {
-             } 
-             :db dados
-             }           
-})
-
-;preciso passar o reader aberto para que o slurp lá dentro funcione
-;
-(with-open [payloadReader (string-to-reader payload)]  
-  ((:enter novo-autor/handler contexto) (assoc-in contexto [:request :body] payloadReader))
+(defn cria-contexto-com-payload-e-dados [payload dados]
+  {:request {:funcao-transacao executa-transacao-datomic
+             :json-params payload
+             :db dados}}
   )
+
+#_(
+   - Cria o payload-reader e mantém aberto com o with-open
+   - Cria um deflow
+   - Precisa definir o estado inicial do flow
+     - Contexto com os dados + funcao de transacao inserida + payload
+   - usa o get-state para aplicar a função do handler em cima do estado
+     - quando ele faz get-state :simbolo, está aplicando essa função também. 
+   - tem que fazer o match agora para verificar 2 coisas na response:
+     - o status é 200?
+     - tem a chave id na resposta?
+   - Acho que da para colocar mais um flow passando o handler como argume
+     - acho que não, tem que pegar o estado. A não ser que eu possa modificar o estado para acrescentar coisas.
+   
+     
+   
+)
+
+
+    (api/defflow cria-novo-autor {:init (constantly (cria-contexto-com-payload-e-dados payload #{}))}
+      [resposta (api/get-state (:enter novo-autor/handler))]
+      (match? 1 1)
+      (match? {:status 200} (:response resposta)))
+
+
 
 
 

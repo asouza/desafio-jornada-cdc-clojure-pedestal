@@ -15,7 +15,7 @@
   )
 
 ;;##paraTreinar aqui eu posso usar o lance das specs, para definir bem a entrada. Brincar de pre e pos condicoes
-(defn parse-json-body [context] 
+(defn parse-json-body [context]   
   (let [body (slurp (get-in context [:request :body]))] ;; Converte o corpo para string
     ;:key-fn é por onde passamos a funcao que transforma a propriedade que está como string para uma keyword a ser adicionada no mapa
     (json/read-str body :key-fn keyword))) ;; Decodifica o JSON

@@ -41,11 +41,15 @@
 
 (def handler {
                  :name :novo-autor
-                 :enter (fn [context]
-                          (let [payload (utilitarios/parse-json-body context)
+                 :enter (fn [context] 
+                          (let [payload (get-in context [:request :json-params])
                                 ;aqui eu estou validando duas vezes?
                                 valid? (m/validate schema-novo-autor payload)
                                 errors (me/humanize (m/explain schema-novo-autor payload))] 
+                            
+                            (println payload)
+                            (println valid?)
+                            (println errors)
                             (cond
                               (not valid?) (utilitarios/respond-validation-error-with-json context errors)
 
