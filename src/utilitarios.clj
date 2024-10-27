@@ -22,11 +22,11 @@
 
 ;;aqui pode ser um multimetodo
 (defn respond-with-json [context payload]
-  (http/respond-with context 200 (json/write-str payload))
+  (http/respond-with context 200 payload)
   )
 
 (defn respond-validation-error-with-json [context errors]
-  (http/respond-with context 400 {"Content-Type" "application/json"} (json/write-str errors))
+  (http/respond-with context 400 {:Content-Type "application/json"} errors)
   )
 
 (defn respond-with-status [context status]

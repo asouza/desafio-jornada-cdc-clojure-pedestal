@@ -82,7 +82,7 @@
     #{
        ["/autores" :post [(body-params) db-interceptor novo-autor/handler]]
        ["/autores" :get [http/json-body db-interceptor lista-autores/handler]]
-       ["/categorias" :post [db-interceptor nova-categoria/handler]]
+       ["/categorias" :post [http/json-body (body-params) db-interceptor nova-categoria/handler]]
        ["/livros" :post [db-interceptor novo-livro/handler]]
        ["/livros" :get [db-interceptor lista-livros/handler]]
        ["/livros/:id" :get [db-interceptor detalhe-livro/handler]]

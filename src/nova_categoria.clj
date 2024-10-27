@@ -38,7 +38,7 @@
                      :name  :nova-categoria
                      :enter (fn [context]
                               (let [
-                                    payload (utilitarios/parse-json-body context)
+                                    payload (get-in context [:request :json-params])
                                     ;aqui eu estou validando duas vezes?
                                     valid? (m/validate schema-nova-categoria payload)
                                     errors (me/humanize (m/explain schema-nova-categoria payload))
@@ -47,7 +47,7 @@
                                 (cond
                                   (not valid?) (utilitarios/respond-validation-error-with-json context errors)
 
-                                  (ja-existe-nome-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe categoria com o nome passado"]})
+                                  (ja-existe-nome-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-errors ["Ja existe categoria com o nome passado"]})
 
                                   :else (let [
                                                novo-id (utilitarios/executa-transacao context [(datomic-schema-categoria/categoria-to-schema payload)])
