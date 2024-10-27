@@ -62,15 +62,9 @@
 (api/defflow nao-pode-criar-autor-com-email-duplicado {:init (constantly (cria-contexto-com-payload-e-dados payload dados-com-email-duplicado))}
   [resposta (api/get-state (:enter novo-autor/handler))
    :let [body (json-to-map (get-in resposta [:response :body]))]]
-  (match? {
-            :status 400
-            :body {
-                :global-erros ["Ja existe autor com email cadastrado"]   
-            }
-           } 
-          (:response resposta)))
-  ;; (match? true (contains? body :global-erros))
-  ;; (match? true (contains? body :global-erros)))
+  (match? {:status 400} (:response resposta))          
+  (match? true (contains? body :global-erros))
+  (match? ["Ja existe autor com email cadastrado"] (:global-erros body)))
 
 
     

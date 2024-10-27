@@ -2,6 +2,7 @@
   (:require
     [utilitarios]
     [datomic.api :as d]
+   [io.pedestal.http :as http]
     )
   )
 
@@ -38,7 +39,7 @@
                   dados (get-in context [:request :db])
                   autores (busca-autores dados)
                   ]
-              (utilitarios/respond-with-json context (map converte-linha-autor-saida-lista autores))
+              (http/respond-with context 200 (map converte-linha-autor-saida-lista autores)) 
               ))
    }
   )
