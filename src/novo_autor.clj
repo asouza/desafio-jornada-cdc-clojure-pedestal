@@ -33,8 +33,6 @@
 
     ;Eu tinha feito assim => ((not (empty? emails)))
     ;a IDE mandou eu fazer assim
-    (println "-----")
-    (println (seq emails) )
     (seq emails) 
     )
   )
@@ -47,13 +45,10 @@
                                 valid? (m/validate schema-novo-autor payload)
                                 errors (me/humanize (m/explain schema-novo-autor payload))] 
                             
-                            (println payload)
-                            (println valid?)
-                            (println errors)
                             (cond
                               (not valid?) (utilitarios/respond-validation-error-with-json context errors)
 
-                              (ja-existe-email-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Já existe autor com email cadastrado"]})
+                              (ja-existe-email-cadastrado context payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Ja existe autor com email cadastrado"]})
 
                               :else (let [novo-id (utilitarios/executa-transacao context [(datommic-schema-autor/autor-to-schema payload)])]
 

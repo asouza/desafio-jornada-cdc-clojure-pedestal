@@ -18,13 +18,9 @@
 
 
 
-(def payload {:nome "Larissa"
+(def payload {:nome "nome de teste"
               :email "email@email"
               :descricao "descricao da pessoa autora"})
-
-(def dados-com-email-duplicado #{[1 :autor/nome "Larissa"]
-              [1 :autor/email "email2@email"]
-              [1 :autor/descricao "alguma descricao"]})
 
 
 (defn cria-contexto-com-payload-e-dados [payload dados]
@@ -44,17 +40,40 @@
      - o status é 200?
      - tem a chave id na resposta?
    - Acho que da para colocar mais um flow passando o handler como argume
-     - acho que não, tem que pegar o estado. A não ser que eu possa modificar o estado para acrescentar coisas.
-   
-     
+     - acho que não, tem que pegar o estado. A não ser que eu possa modificar o estado para acrescentar coisas. 
    
 )
 
+(defn json-to-map [str-json]
+  (json/read-str str-json :key-fn keyword)
+  )
 
-    (api/defflow cria-novo-autor {:init (constantly (cria-contexto-com-payload-e-dados payload #{}))}
-      [resposta (api/get-state (:enter novo-autor/handler))]
-      (match? 1 1)
-      (match? {:status 200} (:response resposta)))
+(def dados-com-email-duplicado #{[1 :autor/nome "teste"]
+                                 [1 :autor/email (:email payload)]
+                                 [1 :autor/descricao "alguma descricao"]})
+
+
+(api/defflow cria-novo-autor {:init (constantly (cria-contexto-com-payload-e-dados payload #{}))}
+  [resposta (api/get-state (:enter novo-autor/handler))
+   :let [body (json-to-map (get-in resposta [:response :body]))]] 
+  (match? {:status 200} (:response resposta)) 
+  (match? true (contains? body :id)))
+
+(api/defflow nao-pode-criar-autor-com-email-duplicado {:init (constantly (cria-contexto-com-payload-e-dados payload dados-com-email-duplicado))}
+  [resposta (api/get-state (:enter novo-autor/handler))
+   :let [body (json-to-map (get-in resposta [:response :body]))]]
+  (match? {
+            :status 400
+            :body {
+                :global-erros ["Ja existe autor com email cadastrado"]   
+            }
+           } 
+          (:response resposta)))
+  ;; (match? true (contains? body :global-erros))
+  ;; (match? true (contains? body :global-erros)))
+
+
+    
 
 
 
