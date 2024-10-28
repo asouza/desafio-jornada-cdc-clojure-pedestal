@@ -12,17 +12,12 @@
 (defn executa-transacao-datomic [fn-id-generator]
 
   (fn [entidade] 
-    (println entidade)
-    (let [
-         id (fn-id-generator)
-    ]
-      [id]
-      ) 
+      [(fn-id-generator)] 
     )
   )
 
 
 (defn cria-contexto-com-payload-e-dados [payload dados atom-id]
-  {:request {:funcao-transacao (executa-transacao-datomic  #((default-id-generator atom-id)))
+  {:request {:funcao-transacao (executa-transacao-datomic  (fn [] (default-id-generator atom-id)))
              :json-params payload
              :db dados}})
