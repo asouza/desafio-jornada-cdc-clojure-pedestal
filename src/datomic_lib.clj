@@ -6,8 +6,20 @@
 
 (defn busca-entidade
   "Retorna nil, caso não encontre"
-  [dados atributo id]
-  (d/pull dados [atributo] id)
+
+  ;aqui eu vou trocar para usar a api de query. Aí vou ter que explorar mais o datomic.Database
+  [dados id]
+
+  ;pelo que entendi, aqui busca uma entidade que tem exatamente este id
+  (let [
+    query '[:find ?id-entidade
+            :in $ ?id-entidade
+            :where [?id-entidade]
+            ] 
+     resultado (d/q query dados id)
+     ]
+    (seq resultado)
+    )
   )
 
 (defn busca-entidades-por-unico-atributo [dados atributo-match valor-buscado]
@@ -26,7 +38,6 @@
     )
   )
 
-(defn busca-todos-atributos-entidade [dados id]
-  (println (str "======= " id))
+(defn busca-todos-atributos-entidade [dados id] 
   (d/pull dados '[*] id)
   )

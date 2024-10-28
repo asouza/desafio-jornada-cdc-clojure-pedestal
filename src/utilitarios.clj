@@ -16,9 +16,9 @@
 
 ;;##paraTreinar aqui eu posso usar o lance das specs, para definir bem a entrada. Brincar de pre e pos condicoes
 (defn parse-json-body [context]   
-  (let [body (slurp (get-in context [:request :body]))] ;; Converte o corpo para string
-    ;:key-fn é por onde passamos a funcao que transforma a propriedade que está como string para uma keyword a ser adicionada no mapa
-    (json/read-str body :key-fn keyword))) ;; Decodifica o JSON
+  (get-in context [:request :json-params])
+  )
+
 
 ;;aqui pode ser um multimetodo
 (defn respond-with-json [context payload]
@@ -26,8 +26,9 @@
   )
 
 (defn respond-validation-error-with-json [context errors]
-  (http/respond-with context 400 {:Content-Type "application/json"} errors)
-  )
+  ;aqui antes eu tava setando o content-type da resposta, não pode mais. Da problema lá no interceptor.
+  ;acho que se for setar, tem que definir a chave como string e não como simbolo. 
+  (http/respond-with context 400 errors))
 
 (defn respond-with-status [context status]
   (http/respond-with context status)

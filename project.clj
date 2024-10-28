@@ -13,6 +13,7 @@
   ;; Caminhos das fontes e testes
   :source-paths ["src"]
   :test-paths ["test"]
+  :java-source-paths ["src/java"]
 
   ;; Perfil de testes
   :profiles
