@@ -8,6 +8,7 @@
                  [org.postgresql/postgresql "42.5.1"]
                  [com.datomic/peer "1.0.7187"]
                  [com.stuartsierra/component "1.1.0"]
+                 [com.stuartsierra/component.repl "0.2.0"]
                  ]
   :plugins [[lein-exec "0.3.7"]]
 
