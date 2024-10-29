@@ -31,15 +31,16 @@
     )
   )
 
-(def handler
+(defn- logica-lista-autores [context db]
+            (let [autores (busca-autores db)]
+  (http/respond-with context 200 (map converte-linha-autor-saida-lista autores)))  
+  )
+
+(defn handler [{:keys [:datomic]}]
   {
    :name :lista-autores
    :enter (fn [context]
-            (let [
-                  dados (get-in context [:request :db])
-                  autores (busca-autores dados)
-                  ]
-              (http/respond-with context 200 (map converte-linha-autor-saida-lista autores)) 
-              ))
+            (logica-lista-autores context (:db datomic))
+            )
    }
   )

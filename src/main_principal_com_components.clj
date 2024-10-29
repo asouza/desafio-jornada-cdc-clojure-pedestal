@@ -112,7 +112,7 @@
   (route/expand-routes
     #{
        ["/autores" :post [(body-params) (novo-autor/handler dependencias)]]
-       ["/autores" :get [http/json-body db-interceptor lista-autores/handler]]
+       ["/autores" :get [http/json-body (lista-autores/handler dependencias)]]
        ["/categorias" :post [http/json-body (body-params) db-interceptor nova-categoria/handler]]
        ["/livros" :post [http/json-body (body-params) db-interceptor novo-livro/handler]]
        ["/livros" :get [db-interceptor lista-livros/handler]]
