@@ -7,6 +7,7 @@
                  [metosin/malli "0.10.0" ]
                  [org.postgresql/postgresql "42.5.1"]
                  [com.datomic/peer "1.0.7187"]
+                 [com.stuartsierra/component "1.1.0"]
                  ]
   :plugins [[lein-exec "0.3.7"]]
 

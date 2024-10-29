@@ -81,6 +81,11 @@
   (match? 400 (:status resposta))
   (match? {:global-errors ["Nao existe o autor referenciado"]} (:body resposta)))
 
+(api/defflow nao-deve-cadastrar-com-titulo-duplicado {:init (constantly (utilitarios-test/cria-contexto-com-payload-e-dados payload-livro-com-titulo-duplicado versao-banco (atom-id)))}
+  [resposta (api/get-state utilitarios-test/executa-handler novo-livro/handler)]
+  (match? 400 (:status resposta))
+  (match? {:global-errors ["Ja existe um livro com o mesmo titulo"]} (:body resposta)))
+
 
     
 
