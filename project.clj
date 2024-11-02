@@ -9,6 +9,8 @@
                  [com.datomic/peer "1.0.7187"]
                  [com.stuartsierra/component "1.1.0"]
                  [com.stuartsierra/component.repl "0.2.0"]
+                 [prismatic/schema "1.4.1"]
+                 [com.attendify/schema-refined "0.3.0-alpha4"]
                  ]
   :plugins [[lein-exec "0.3.7"]]
 

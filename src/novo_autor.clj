@@ -4,15 +4,15 @@
     [malli.core :as m]
     [malli.error :as me]
     [datommic-schema-autor]
-    [datomic.api :as d])
+    [datomic.api :as d]
+    [schema.core :as s]
+    [schema-refined.core :as r]
+    [valida-email]
+   )
   (:import (java.time LocalDateTime)))
 
-(def schema-novo-autor
-  [:map
-   [:nome [:string {:min 1 :max 20 :error/message "Nome é obrigatório"}]]
-   [:email [:string {:min 1 :error/message "Email inválido"}]]
-   [:descricao  [:string {:min 1 :max 100 :error/message "Descricao obrigatoria"}]]
-   ])
+
+
 
 (defn ja-existe-email-cadastrado [db autor]
   (let [
@@ -36,30 +36,62 @@
     )
   )
 
-(defn- logica-cria-autor [context db funcao-transacao]
-  (println "=====")
-  (println funcao-transacao)
-  (let [payload (get-in context [:request :json-params])
-                                  ;aqui eu estou validando duas vezes?
-        valid? (m/validate schema-novo-autor payload)
-        errors (me/humanize (m/explain schema-novo-autor payload))]
-    
-    (cond
-      (not valid?) (utilitarios/respond-validation-error-with-json context errors)
+(s/defschema NovoAutorHandlerRequest
+  {:nome r/NonEmptyStr
+   :email (r/refined s/Str (r/And r/NonEmptyStr valida-email/Email))
+   :descricao r/NonEmptyStr})
+
+(s/defn ^:always-validate logica-cria-autor [
+                           context 
+                           payload :- NovoAutorHandlerRequest
+                           db 
+                           funcao-transacao
+                           ]
+  (let [] 
+    (cond 
       
       (ja-existe-email-cadastrado db payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Ja existe autor com email cadastrado"]})
       
       :else (let [novo-id (funcao-transacao [(datommic-schema-autor/autor-to-schema payload)])]
               
-              (utilitarios/respond-with-json context {:id novo-id}))))
-  )                
+              (utilitarios/respond-with-json context {:id novo-id}))
+      )
+    )
+  )  
+
+
+(def schema-http-request-payload
+  [:map
+   [:nome [:string {:min 1 :max 20 :error/message "Nome é obrigatório"}]]
+   [:email [:string {:min 1 :error/message "Email inválido"}]]
+   [:descricao  [:string {:min 1 :max 100 :error/message "Descricao obrigatoria"}]]])
   
 
 (defn handler [{:keys [:datomic]}]
-  {
-   :name :novo-autor
+  {:name :novo-autor
    :enter
-     (fn [contexto]
-                (logica-cria-autor contexto (:db datomic) (:funcao-transacao datomic))
-                )
-})
+   (fn [context]
+       ;poderia usar uma (s/fn-validation) aqui para forçar a checagem de tipo na chamada
+     #_(
+        - valida com o mali o payload externo
+        - converte para o schema definido
+        - e aí passar o que foi convertido para a lógica
+        - depois analisar como isolar isso.  
+
+     ) 
+    ;;  (try
+       (let [payload (get-in context [:request :json-params])
+             valid? (m/validate schema-http-request-payload payload)
+             errors (me/humanize (m/explain schema-http-request-payload payload))]
+         
+
+         (cond
+           (not valid?) (utilitarios/respond-validation-error-with-json context errors)
+           
+           :else (logica-cria-autor context payload (:db datomic) (:funcao-transacao datomic))
+           )         
+      ;;  (catch clojure.lang.ExceptionInfo e
+      ;;    (let [erros (:error (ex-data e))]
+      ;;      (println erros)
+      ;;      context)))
+         ))})
