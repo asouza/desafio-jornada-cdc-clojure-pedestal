@@ -119,7 +119,7 @@
        ["/livros/:id" :get [db-interceptor detalhe-livro/handler]]
        ["/paises" :post [db-interceptor novo-pais/handler]]
        ["/paises/:id-pais/estados" :post [db-interceptor novo-estado/handler]]
-       ["/carrinho/passo-1" :post [db-interceptor carrinho/handler-passo-1]]
+       ["/carrinho/passo-1" :post [http/json-body (body-params) (carrinho/handler-passo-1 dependencias)]]
        ["/carrinhos" :get [db-interceptor carrinhos/handler]]
        ["/datomic-cria-banco" :post [datomic-cria-banco/handler]]
        ["/datomic-registra-schema-autor" :post [db-interceptor datommic-schema-autor/handler]]
