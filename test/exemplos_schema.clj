@@ -1,9 +1,17 @@
 (ns exemplos-schema
   (:require
    [schema.core :as s]
+   [schema.coerce :as coerce]
    [schema.utils :as u]
+   [schema.spec.core :as spec]
             ;;   :include-macros true ;; cljs only
-   ))
+   )
+(:import 
+       [java.time LocalDate]
+        [java.time.format DateTimeFormatter])  
+  )
+
+
 
 (s/defschema Data
   "A schema for a nested data type"
@@ -70,4 +78,62 @@
 (.-value (:nome resultado-validacao-autor))
 (.-schema (:nome resultado-validacao-autor))
 @(.-expectation-delay (:email resultado-validacao-autor))
+
+(defn localdate-matcher [schema]
+  (if (= schema LocalDate)
+    (fn [value]
+      (LocalDate/parse value (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
+      )
+    
+    nil
+    )
+)
+
+(defn bigdecimal-matcher [schema]
+  (if (= schema java.math.BigDecimal)
+    (fn [value]
+      (java.math.BigDecimal. value))
+
+    nil))
+
+
+(s/defschema CommentRequest
+  {(s/optional-key :parent-comment-id) long
+   :text s/Str
+   :chave s/Keyword
+   :valor java.math.BigDecimal
+   :data java.time.LocalDate
+   :share-services [(s/enum :twitter :facebook :google)]})
+
+(println (coerce/json-coercion-matcher s/Int))
+
+(def parse-comment-request
+  ;; (coerce/coercer CommentRequest coerce/json-coercion-matcher)
+  (coerce/coercer CommentRequest (fn [schema] 
+                                   (or
+                                     (coerce/json-coercion-matcher schema)
+                                     (localdate-matcher schema)
+                                     (bigdecimal-matcher schema)
+                                    )
+                                   ) 
+                  ))
+
+(def coerced (parse-comment-request
+              {:parent-comment-id (int 2128123123)
+               :valor 20.50
+               :chave "bla"
+               :text "This is awesome!"
+               :data "2024-12-12"
+               :share-services ["twitter" "facebook"]}))
+(println coerced)
+
+(= coerced
+   
+   {:parent-comment-id 2128123123
+    :text "This is awesome!"
+    :share-services [:twitter :facebook]}
+   )
+
+
+
 

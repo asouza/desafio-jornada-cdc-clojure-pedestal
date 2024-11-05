@@ -8,6 +8,7 @@
     [schema.core :as s]
     [schema-refined.core :as r]
     [valida-email]
+    [common-schema]
    )
   (:import (java.time LocalDateTime)))
 
@@ -47,7 +48,7 @@
                            db 
                            funcao-transacao
                            ]
-  (let [] 
+   
     (cond 
       
       (ja-existe-email-cadastrado db payload) (utilitarios/respond-validation-error-with-json context {:global-erros ["Ja existe autor com email cadastrado"]})
@@ -56,7 +57,7 @@
               
               (utilitarios/respond-with-json context {:id novo-id}))
       )
-    )
+    
   )  
 
 
@@ -81,7 +82,8 @@
      ) 
     ;;  (try
        (let [payload (get-in context [:request :json-params])
-             valid? (m/validate schema-http-request-payload payload)
+             coerced-payload (common-schema/coerce NovoAutorHandlerRequest payload)
+             valid? (m/validate schema-http-request-payload coerced-payload)
              errors (me/humanize (m/explain schema-http-request-payload payload))]
          
 
