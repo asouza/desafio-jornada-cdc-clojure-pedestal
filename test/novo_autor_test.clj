@@ -19,7 +19,7 @@
 
 
 (def payload {:nome "nome de teste"
-              :email "email@email"
+              :email "email@email.com"
               :descricao "descricao da pessoa autora"})
 
 
@@ -45,6 +45,7 @@
 )
 
 (defn json-to-map [str-json]
+  (println str-json)
   (json/read-str str-json :key-fn keyword)
   )
 
@@ -54,14 +55,14 @@
 
 
 (api/defflow cria-novo-autor {:init (constantly (cria-contexto-com-payload-e-dados payload #{}))}
-  [resposta (api/get-state (:enter novo-autor/handler))
-   :let [body (json-to-map (get-in resposta [:response :body]))]] 
+  [resposta (api/get-state (:enter (novo-autor/handler {:datomic {:db #{} :funcao-transacao executa-transacao-datomic}})))
+   :let [body (get-in resposta [:response :body])]] 
   (match? {:status 200} (:response resposta)) 
   (match? true (contains? body :id)))
 
 (api/defflow nao-pode-criar-autor-com-email-duplicado {:init (constantly (cria-contexto-com-payload-e-dados payload dados-com-email-duplicado))}
-  [resposta (api/get-state (:enter novo-autor/handler))
-   :let [body (json-to-map (get-in resposta [:response :body]))]]
+  [resposta (api/get-state (:enter (novo-autor/handler {:datomic {:db dados-com-email-duplicado :funcao-transacao executa-transacao-datomic}})))
+   :let [body (get-in resposta [:response :body])]]
   (match? {:status 400} (:response resposta))          
   (match? true (contains? body :global-erros))
   (match? ["Ja existe autor com email cadastrado"] (:global-erros body)))

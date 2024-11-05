@@ -48,6 +48,7 @@
                            db 
                            funcao-transacao
                            ]
+  
    
     (cond 
       
@@ -71,7 +72,7 @@
 (defn handler [{:keys [:datomic]}]
   {:name :novo-autor
    :enter
-   (fn [context]
+   (fn [context]     
        ;poderia usar uma (s/fn-validation) aqui para forçar a checagem de tipo na chamada
      #_(
         - valida com o mali o payload externo
@@ -85,7 +86,7 @@
              coerced-payload (common-schema/coerce NovoAutorHandlerRequest payload)
              valid? (m/validate schema-http-request-payload coerced-payload)
              errors (me/humanize (m/explain schema-http-request-payload payload))]
-         
+          
 
          (cond
            (not valid?) (utilitarios/respond-validation-error-with-json context errors)
